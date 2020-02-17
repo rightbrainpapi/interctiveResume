@@ -37,6 +37,8 @@
         this.position = [45,45]; // the exact position relative to the top left corner of map in px
         this.delayMove = 700; // time it takes the character to move exactly 1 tile
     }
+
+
     Character.prototype.placeAt = function(x,y){
         // this method places the character to the destination tile
         this.tileFrom   = [x, y];
@@ -57,11 +59,11 @@
              this.position[0] = (this.tileFrom[0] * tileW ) + ((tileW - this.dimensions[0])/2);
              this.position[1] = (this.tileFrom[1] * tileH) + ((tileH - this.dimensions[1])/2);
 
-             if(this.tile[0] != this.tileFrom[0]){
+             if(this.tileTo[0] != this.tileFrom[0]){
                  var diff = (tileW/ this.delayMove) * (t- this.timeMoved);
                  this.position[0]+=(this.tileTo[0]<this.tileFrom[0] ? 0 - diff : diff);
              }
-             if(this.tile[1] != this.tileFrom[1]){
+             if(this.tileTo[1] != this.tileFrom[1]){
                 var diff = (tileH/ this.delayMove) * (t- this.timeMoved);
                 this.position[1]+=(this.tileTo[1]<this.tileFrom[1] ? 0 - diff : diff); // Check to see
             }
@@ -87,21 +89,38 @@
    
 
           window.addEventListener("keydown", function(e){
-                if(e.keyCode>=37 && keyCode<=40){
-                    keysDown[e.keyCode] = true;
-                }
-          });
-
-          window.addEventListener("keyu", function(e){
-            if(e.keyCode>=37 && keyCode<=40){
-                keysDown[e.keyCode] = false;
-            }
+            if (e.defaultPrevented) {
+                return; // Do nothing if event already handled
+              }
+                // if(e.keyCode>=37 && e.keyCode<=40){
+                //     keysDown[e.keyCode] = true;
+                // }
+                switch(event.code) {
+                    case "KeyA":
+                    case "ArrowLeft":
+                      // Handle "turn left"
+                      keysDown[37] = true;
+                    //   keysDown[37] = false;
+                      break;
+                    case "KeyW":
+                    case "ArrowUp":
+                      // Handle "forward"
+                      keysDown[38] = true;
+                      break;
+                    case "KeyD":
+                    case "ArrowRight":
+                      // Handle "turn right"
+                      keysDown[39] = true;
+                      break;
+                    case "KeyS":
+                    case "ArrowDown":
+                      // Handle "back"
+                      keysDown[40] = true;
+                    //   keysDown[37] = false;
+                      break;
+                  }
       });
-
-
-
-
-        };
+};
 
 
 
@@ -123,36 +142,42 @@ function drawGame()
     else{frameCount++;}
 
 // check whether the player is processing movement
-if (!player.processMovement(currentFrameTime)){
+if(!player.processMovement(currentFrameTime))
+{
     //Checks for arrow keys being pressed for
     // Movement for y axis
-        if(keyDown[38] && player.tileFrom[1]>0 && gameMap[toIndex(player.tileFrom[0],
-            player.tileFrom[1] - 1)] ==1)
+        if(keysDown[38] && player.tileFrom[1]>0 && gameMap[toIndex(player.tileFrom[0],
+            player.tileFrom[1]- 1)]==1)
             {
                 player.tileTo[1]-=1;
             }
-            else if(keyDown[40] && player.tileFrom[1]<(mapH-1) && gameMap[toIndex(player.tileFrom[0],
+            else if(keysDown[40] && player.tileFrom[1]<(mapH-1) && gameMap[toIndex(player.tileFrom[0],
                 player.tileFrom[1]+1)]==1)
                 {
                     player.tileTo[1]+=1;
                 } 
     //Checks for arrow keys being pressed for
     // Movement for the x axis
-            else if(keyDown[37] && player.tileFrom[0]>0 && gameMap[toIndex(player.tileFrom[0]- 1,
+            else if(keysDown[37] && player.tileFrom[0]>0 && gameMap[toIndex(player.tileFrom[0]- 1,
                 player.tileFrom[1])] ==1)
                 {
                     player.tileTo[0]-=1;
                 }
-            else if(keyDown[39] && player.tileFrom[0]<(mapW-1) && gameMap[toIndex(player.tileFrom[0]+1,
+            else if(keysDown[39] && player.tileFrom[0]<(mapW-1) && gameMap[toIndex(player.tileFrom[0]+1,
                 player.tileFrom[1])]==1)
                 {
                     player.tileTo[0]+=1;
                 } 
                 //check the tile from are the same as the tile to
                 //if it doesn't match then we know the character is moving
-                if(player.tileFrom[0]!=player.tileTo[0] || playertileFrom[1]!=player.tileTo[1]){
+                if(player.tileFrom[0]!=player.tileTo[0] || player.tileFrom[1]!= player.tileTo[1]){
                     player.timeMoved = currentFrameTime;
                 }
+                // resetting the keydowns to false so that it doesnt continue to move
+                keysDown[37] = false;
+                keysDown[38] = false;
+                keysDown[39] = false;
+                keysDown[40] = false;
 }
 
     for (var y = 0; y < mapH; y++)
@@ -172,9 +197,14 @@ if (!player.processMovement(currentFrameTime)){
             ctx.fillRect(x*tileW, y*tileH, tileW, tileH );
         }
     }
+    ctx.fillStyle = "#0000ff";
+    ctx.fillRect(player.position[0], player.position[1],
+        player.dimensions[0], player.dimensions[1]);
+
     ctx.fillStyle = '#ff0000';
     ctx.fillText("FPS: " + framesLastSecond, 10, 20);
 
+    lastFrameTime = currentFrameTime;
     requestAnimationFrame(drawGame);
 
 
