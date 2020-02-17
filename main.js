@@ -65,7 +65,14 @@
                 var diff = (tileH/ this.delayMove) * (t- this.timeMoved);
                 this.position[1]+=(this.tileTo[1]<this.tileFrom[1] ? 0 - diff : diff); // Check to see
             }
+            this.position[0] = Math.round(this.position[0]);
+            this.position[1] = Math.round(this.position[1]);
          }
+         return true;
+    };
+
+    function toIndex(x,y){
+        return ((y * mapW) + x);
     }
 
     //function to handle load event of the window
@@ -74,12 +81,26 @@
             ctx = document.getElementById('game').getContext('2d'); // this is the 2d drawing context 
             requestAnimationFrame(drawGame); // when the window is ready we will handle drawing the context with our drawgame function
             ctx.font = "bold 10pt sans serif"; //setting the font that will be use for drawing the frame rate
-            img = new Image,
-            // ctx = document.getElementById('animated').getContext('2d');
-          
+            img = new Image,    
           // Sourcing Image for Canvas
           img.src = 'https://cdn.glitch.com/294217ab-b9f2-4ff1-8ca1-4fe6ab5c1109%2Felevator.svg?v=1581876601861';
    
+
+          window.addEventListener("keydown", function(e){
+                if(e.keyCode>=37 && keyCode<=40){
+                    keysDown[e.keyCode] = true;
+                }
+          });
+
+          window.addEventListener("keyu", function(e){
+            if(e.keyCode>=37 && keyCode<=40){
+                keysDown[e.keyCode] = false;
+            }
+      });
+
+
+
+
         };
 
 
@@ -88,6 +109,8 @@
 function drawGame()
 {
     if(ctx==null){return;}
+
+    
         var sec = Math.floor(Date.now()/1000);
         if (sec!=currentSecond)
         {
