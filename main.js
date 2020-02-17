@@ -110,7 +110,9 @@ function drawGame()
 {
     if(ctx==null){return;}
 
-    
+    var currentFrameTime = Date.now();
+    var timeElapsed = currentFrameTime - lastFrameTime;
+
         var sec = Math.floor(Date.now()/1000);
         if (sec!=currentSecond)
         {
@@ -119,6 +121,39 @@ function drawGame()
             frameCount = 1;  
     }
     else{frameCount++;}
+
+// check whether the player is processing movement
+if (!player.processMovement(currentFrameTime)){
+    //Checks for arrow keys being pressed for
+    // Movement for y axis
+        if(keyDown[38] && player.tileFrom[1]>0 && gameMap[toIndex(player.tileFrom[0],
+            player.tileFrom[1] - 1)] ==1)
+            {
+                player.tileTo[1]-=1;
+            }
+            else if(keyDown[40] && player.tileFrom[1]<(mapH-1) && gameMap[toIndex(player.tileFrom[0],
+                player.tileFrom[1]+1)]==1)
+                {
+                    player.tileTo[1]+=1;
+                } 
+    //Checks for arrow keys being pressed for
+    // Movement for the x axis
+            else if(keyDown[37] && player.tileFrom[0]>0 && gameMap[toIndex(player.tileFrom[0]- 1,
+                player.tileFrom[1])] ==1)
+                {
+                    player.tileTo[0]-=1;
+                }
+            else if(keyDown[39] && player.tileFrom[0]<(mapW-1) && gameMap[toIndex(player.tileFrom[0]+1,
+                player.tileFrom[1])]==1)
+                {
+                    player.tileTo[0]+=1;
+                } 
+                //check the tile from are the same as the tile to
+                //if it doesn't match then we know the character is moving
+                if(player.tileFrom[0]!=player.tileTo[0] || playertileFrom[1]!=player.tileTo[1]){
+                    player.timeMoved = currentFrameTime;
+                }
+}
 
     for (var y = 0; y < mapH; y++)
         {
