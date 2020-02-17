@@ -95,7 +95,7 @@
                 // if(e.keyCode>=37 && e.keyCode<=40){
                 //     keysDown[e.keyCode] = true;
                 // }
-                switch(event.code) {
+                switch(e.code) {
                     case "KeyA":
                     case "ArrowLeft":
                       // Handle "turn left"
