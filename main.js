@@ -1,10 +1,53 @@
 
     var ctx = null;
     var tileW = 40, tileH = 40;
-    var mapW = 10, mapH = 10;
+    var mapW = 20, mapH = 20;
 
     var currentSecond = 0, frameCount = 0, framesLastSecond = 0;
     var lastFrameTime = 0;
+
+    var viewport = {
+        screen		: [0,0],
+        startTile	: [0,0],
+        endTile		: [0,0],
+        offset		: [0,0],
+
+        update		: function(px, py) {
+            this.offset[0] = Math.floor((this.screen[0]/2) - px);
+            this.offset[1] = Math.floor((this.screen[1]/2) - py);
+            var tile = [ Math.floor(px/tileW), Math.floor(py/tileH) ];
+
+            this.startTile[0] = tile[0] - 1 - Math.ceil((this.screen[0]/2) / tileW);
+            this.startTile[1] = tile[1] - 1 - Math.ceil((this.screen[1]/2) / tileH);
+        
+
+		    if(this.startTile[0] < 0) { this.startTile[0] = 0; }
+            if(this.startTile[1] < 0) { this.startTile[1] = 0; }
+        
+            this.endTile[0] = tile[0] + 1 + Math.ceil((this.screen[0]/2) / tileW);
+		    this.endTile[1] = tile[1] + 1 + Math.ceil((this.screen[1]/2) / tileH);
+
+		    if(this.endTile[0] >= mapW) { this.endTile[0] = mapW; }
+		    if(this.endTile[1] >= mapH) { this.endTile[1] = mapH; }
+        }
+    };
+    // defining the floror types - tells you whether the character can walk on it
+    var floorTypes = {
+        solid : 0,
+        path  : 1,
+        water : 2
+    };
+
+
+    // Defines the actual tile type
+    //We're creating 5 types of tile here, but with this we can easily just add to this list when we want to add new tiles of different types to the gameMap array:
+    var tileTypes = {
+        0 : { colour:"#685b48", floor:floorTypes.solid	},
+        1 : { colour:"#5aa457", floor:floorTypes.path	},
+        2 : { colour:"#e8bd7a", floor:floorTypes.path	},
+        3 : { colour:"#286625", floor:floorTypes.solid	},
+        4 : { colour:"#678fd9", floor:floorTypes.water	}
+    };
 
     var keysDown = {
         37: false,
@@ -83,6 +126,31 @@
          return true;
     };
 
+    // CanMoveTo method
+    //Checks to see if the character can move to a specific maptile
+    Character.prototype.canMoveTo = function(x, y)
+{
+	if(x < 0 || x >= mapW || y < 0 || y >= mapH) { return false; }
+	if(tileTypes[gameMap[toIndex(x,y)]].floor!=floorTypes.path) { return false; }
+
+	return true; //If these checks have passed, we can move here so, we can return true and close the method.
+};
+
+//These Short hand methods call the canMoveTo method
+//These methods will simply call the canMoveTo method, passing as arguments the Characters current position (tileFrom) with the x or y values modified according to the direction we're trying to move in, and return the result
+Character.prototype.canMoveUp		= function() { return this.canMoveTo(this.tileFrom[0], this.tileFrom[1]-1); };
+Character.prototype.canMoveDown 	= function() { return this.canMoveTo(this.tileFrom[0], this.tileFrom[1]+1); };
+Character.prototype.canMoveLeft 	= function() { return this.canMoveTo(this.tileFrom[0]-1, this.tileFrom[1]); };
+Character.prototype.canMoveRight 	= function() { return this.canMoveTo(this.tileFrom[0]+1, this.tileFrom[1]); };
+
+//  Corrdinal direct Movement
+//  simply take the current game time (in milliseconds) as their argument, and modify the tileTo x or y properties as needed for the target direction.
+Character.prototype.moveLeft	= function(t) { this.tileTo[0]-=1; this.timeMoved = t; };
+Character.prototype.moveRight	= function(t) { this.tileTo[0]+=1; this.timeMoved = t; };
+Character.prototype.moveUp	    = function(t) { this.tileTo[1]-=1; this.timeMoved = t; };
+Character.prototype.moveDown	= function(t) { this.tileTo[1]+=1; this.timeMoved = t; };
+
+
     function toIndex(x,y){
         return ((y * mapW) + x);
     }
@@ -127,7 +195,13 @@
                       keysDown[40] = true;
                       break;
                   }
+
+
       });
+
+      //code that checks the Canvas dimensions and stores it in the viewport objects screen property
+      viewport.screen = [document.getElementById('game').width,
+      document.getElementById('game').height];
 };
 
 
@@ -152,35 +226,11 @@ function drawGame()
 // check whether the player is processing movement
 if(!player.processMovement(currentFrameTime))
 {
-    //Checks for arrow keys being pressed for
-    // Movement for y axis
-        if(keysDown[38] && player.tileFrom[1]>0 && gameMap[toIndex(player.tileFrom[0],
-            player.tileFrom[1]- 1)]==1)
-            {
-                player.tileTo[1]-=1;
-            }
-            else if(keysDown[40] && player.tileFrom[1]<(mapH-1) && gameMap[toIndex(player.tileFrom[0],
-                player.tileFrom[1]+1)]==1)
-                {
-                    player.tileTo[1]+=1;
-                } 
-    //Checks for arrow keys being pressed for
-    // Movement for the x axis
-            else if(keysDown[37] && player.tileFrom[0]>0 && gameMap[toIndex(player.tileFrom[0]- 1,
-                player.tileFrom[1])] ==1)
-                {
-                    player.tileTo[0]-=1;
-                }
-            else if(keysDown[39] && player.tileFrom[0]<(mapW-1) && gameMap[toIndex(player.tileFrom[0]+1,
-                player.tileFrom[1])]==1)
-                {
-                    player.tileTo[0]+=1;
-                } 
-                //check the tile from are the same as the tile to
-                //if it doesn't match then we know the character is moving
-                if(player.tileFrom[0]!=player.tileTo[0] || player.tileFrom[1]!= player.tileTo[1]){
-                    player.timeMoved = currentFrameTime;
-                }
+    if(keysDown[38] && player.canMoveUp())		{ player.moveUp(currentFrameTime); }
+    else if(keysDown[40] && player.canMoveDown())	{ player.moveDown(currentFrameTime); }
+    else if(keysDown[37] && player.canMoveLeft())	{ player.moveLeft(currentFrameTime); }
+    else if(keysDown[39] && player.canMoveRight())	{ player.moveRight(currentFrameTime); }
+
                 // resetting the keydowns to false so that it doesnt continue to move
                 keysDown[37] = false;
                 keysDown[38] = false;
@@ -188,26 +238,34 @@ if(!player.processMovement(currentFrameTime))
                 keysDown[40] = false;
 }
 
-    for (var y = 0; y < mapH; y++)
-        {
-        for (var x = 0; x < mapW; x++)
-            {
-                switch(gameMap[((y*mapW)+x)])
-                {
-                   // if wall is present
-                    case 0:
-                        ctx.fillStyle = '#999999';
-                        break;
-                    default:
-                        ctx.fillStyle = '#eeeeee';
-            }
-            // drawing rectangle at coresponding position for case tile (either 0 or 1 )
-            ctx.fillRect(x*tileW, y*tileH, tileW, tileH );
+// We'll set the viewport centre to the following x, y:
+viewport.update(player.position[0] + (player.dimensions[0]/2),
+player.position[1] + (player.dimensions[1]/2));
+
+
+ctx.fillStyle = "#000000";
+ctx.fillRect(0, 0, viewport.screen[0], viewport.screen[1]);
+
+
+for(var y = viewport.startTile[1]; y <= viewport.endTile[1]; ++y)
+{
+    for(var x = viewport.startTile[0]; x <= viewport.endTile[0]; ++x)
+    {
+
+        //This simply changes our Canvas drawing context (ctx) fill colour to the colour corresponding to the gameMap array tile value found at the index returned from the toIndex method for the current x,y loop values in the tileTypes array!sets the canvas  
+        ctx.fillStyle = tileTypes[gameMap[toIndex(x,y)]].colour;
+
+            // the drawing code for drawing each tile to add the viewport offset value to the x and y coordinates of the tiles rectangle.
+			ctx.fillRect( viewport.offset[0] + (x*tileW), viewport.offset[1] + (y*tileH),
+				tileW, tileH);
+
+
         }
     }
     ctx.fillStyle = "#0000ff"; // Blue Character
-    ctx.fillRect(player.position[0], player.position[1],
-        player.dimensions[0], player.dimensions[1]);
+    //Finally, we need to also add the offset values to the position at which our player will be drawn:
+    ctx.fillRect(viewport.offset[0] + player.position[0], viewport.offset[1] + player.position[1],
+		player.dimensions[0], player.dimensions[1]);
 
     ctx.fillStyle = '#ff0000';
     ctx.fillText("FPS: " + framesLastSecond, 10, 20);
@@ -221,26 +279,26 @@ if(!player.processMovement(currentFrameTime))
 //////////////////////
 // Elevator Operation
 //////////////////////
-    img.addEventListener('load', function () {
+    // img.addEventListener('load', function () {
 
-        var interval = setInterval(function() {
-          var x = 405, y = 400;
+    //     var interval = setInterval(function() {
+    //       var x = 405, y = 400;
           
-          return function () {
+    //       return function () {
     
-            // Clear function
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            // Drawing image
-            ctx.drawImage(img, x, y, 80, 77); //size
+    //         // Clear function
+    //         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    //         // Drawing image
+    //         ctx.drawImage(img, x, y, 80, 77); //size
     
-            // moving the image up and down
-            y -= 1;
-            if (y < -130) {
-              y = 400;
-            }
-          };
-        }(), 1000/40); // speed
-      }, false);
+    //         // moving the image up and down
+    //         y -= 1;
+    //         if (y < -130) {
+    //           y = 400;
+    //         }
+    //       };
+    //     }(), 1000/40); // speed
+    //   }, false);
 ////////////////////////////
 // End of Elevator Operation
 ////////////////////////////
