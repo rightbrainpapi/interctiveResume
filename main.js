@@ -100,7 +100,6 @@
                     case "ArrowLeft":
                       // Handle "turn left"
                       keysDown[37] = true;
-                    //   keysDown[37] = false;
                       break;
                     case "KeyW":
                     case "ArrowUp":
@@ -116,7 +115,6 @@
                     case "ArrowDown":
                       // Handle "back"
                       keysDown[40] = true;
-                    //   keysDown[37] = false;
                       break;
                   }
       });
@@ -197,7 +195,7 @@ if(!player.processMovement(currentFrameTime))
             ctx.fillRect(x*tileW, y*tileH, tileW, tileH );
         }
     }
-    ctx.fillStyle = "#0000ff";
+    ctx.fillStyle = "#0000ff"; // Blue Character
     ctx.fillRect(player.position[0], player.position[1],
         player.dimensions[0], player.dimensions[1]);
 
